@@ -1,126 +1,49 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
-  <meta charset="utf-8">
-  <base target="_top">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <?!= include('Style'); ?>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SIKEDO — Sistem Kehadiran Dosen</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Poppins','Segoe UI',system-ui,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;
+       background:linear-gradient(135deg,#0f172a 0%,#1e3a8a 55%,#2563eb 100%);padding:18px}
+  .card{background:#fff;border-radius:18px;padding:40px 34px;width:100%;max-width:420px;text-align:center;box-shadow:0 24px 70px rgba(0,0,0,.4)}
+  .logo{width:80px;height:80px;border-radius:22px;background:linear-gradient(135deg,#1a73e8,#60a5fa);
+        display:flex;align-items:center;justify-content:center;font-size:40px;margin:0 auto 16px}
+  h1{font-size:24px;letter-spacing:1px}
+  .sub{color:#64748b;font-size:13px;margin:6px 0 26px}
+  .spinner{width:34px;height:34px;border:3px solid #dbeafe;border-top-color:#1a73e8;border-radius:50%;
+           animation:spin .8s linear infinite;margin:0 auto 14px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .count{color:#64748b;font-size:12px;margin-bottom:18px}
+  .btn{display:inline-block;background:#1a73e8;color:#fff;text-decoration:none;font-weight:600;
+       padding:12px 26px;border-radius:10px;font-size:14px;transition:.15s}
+  .btn:hover{background:#1557b0}
+  .foot{margin-top:22px;color:#94a3b8;font-size:11px;line-height:1.6}
+</style>
 </head>
 <body>
-
-  <!-- ============ HEADER LOGIN + REGISTRASI ============ -->
-  <div id="loginView" style="display:none">
-
-    <div class="login-card" id="loginCard">
-      <div class="login-logo">🎓</div>
-      <h1 class="login-title">SIKEDO</h1>
-      <p class="login-sub">Sistem Kehadiran Dosen — PKA 26/27</p>
-      <form id="loginForm" autocomplete="off">
-        <div class="field">
-          <label>NIDN / Username</label>
-          <input id="loginNidn" placeholder="Contoh: 0107107101" required>
-        </div>
-        <div class="field">
-          <label>Password</label>
-          <input id="loginPw" type="password" placeholder="Masukkan password" required>
-        </div>
-        <button type="submit" class="btn btn-primary btn-block" id="btnLogin">Masuk</button>
-      </form>
-      <div class="switch-link" id="toRegister">Belum punya akun? <b>📝 Daftar sekarang</b></div>
-      <div class="login-hint">
-        👤 <b>Dosen</b> — username &amp; password awal = <b>NIDN 10 digit</b> (awali angka 0)<br>
-        🛡️ <b>Admin</b> — admin / admin123 <i>(segera ganti!)</i>
-      </div>
-    </div>
-
-    <div class="login-card" id="regCard" style="display:none">
-      <div class="login-logo">📝</div>
-      <h1 class="login-title">REGISTRASI AKUN DOSEN</h1>
-      <p class="login-sub">Belum terdaftar? Isi data di bawah — tersimpan otomatis</p>
-      <form id="regForm" autocomplete="off">
-        <div class="field">
-          <label>NIDN (10 digit) *</label>
-          <input id="regNidn" placeholder="Contoh: 0107107101" required>
-        </div>
-        <div class="field">
-          <label>Nama Lengkap *</label>
-          <input id="regNama" placeholder="Nama sesuai PK/A" required>
-        </div>
-        <div class="field">
-          <label>Jabatan Fungsional</label>
-          <select id="regJabfung"></select>
-        </div>
-        <div class="field">
-          <label>Password (opsional)</label>
-          <input id="regPw" type="password" placeholder="Kosongkan = password awal NIDN Anda">
-        </div>
-        <button type="submit" class="btn btn-primary btn-block" id="btnReg">Daftar</button>
-      </form>
-      <div class="switch-link" id="toLogin">Sudah punya akun? <b>🔐 Login di sini</b></div>
-    </div>
-
-    <!-- FOOTER halaman login -->
-    <div class="login-footer">© <span class="js-year">2026</span> <b>SIKEDO</b> — Sistem Kehadiran Dosen · PKA 26/27</div>
+  <div class="card">
+    <div class="logo">🎓</div>
+    <h1>SIKEDO</h1>
+    <p class="sub">Sistem Kehadiran Dosen — PKA 26/27</p>
+    <div class="spinner"></div>
+    <p class="count">Mengalihkan ke aplikasi dalam <span id="cd">3</span> detik…</p>
+    <a class="btn" id="btn" href="#">🔐 Buka Aplikasi SIKEDO</a>
+    <p class="foot">Aplikasi berjalan di Google Apps Script.<br>Halaman ini hanya gerbang masuk (landing page).</p>
   </div>
+<script>
+  /* ===== GANTI dengan URL Web App (/exec) milik Anda ===== */
+  var APP_URL = "https://script.google.com/macros/s/GANTI_DENGAN_ID_DEPLOYMENT_ANDA/exec";
 
-  <!-- ============ APLIKASI ============ -->
-  <div id="appView" style="display:none">
-    <div class="app-body">
-
-      <!-- SIDEBAR -->
-      <aside class="sidebar" id="sidebar">
-        <div class="brand">
-          <div class="brand-ic">🎓</div>
-          <div><b>SIKEDO</b><small>Sistem Kehadiran Dosen</small></div>
-        </div>
-        <nav id="navMenu"></nav>
-        <div class="sidebar-foot">
-          <div class="user-mini">
-            <b id="sideUserName">—</b>
-            <small id="sideUserRole">—</small>
-          </div>
-          <button class="btn btn-sm btn-logout" id="btnLogout">🚪 Keluar</button>
-        </div>
-      </aside>
-
-      <!-- KONTEN UTAMA -->
-      <main class="main">
-
-        <!-- HEADER (topbar) -->
-        <div class="topbar">
-          <button class="btn btn-outline btn-sm menu-btn" id="btnMenu">☰</button>
-          <span class="topbar-brand">🎓 SIKEDO</span>
-          <h1 id="pageTitle">Dashboard</h1>
-          <div class="user-chip" id="userChip"></div>
-        </div>
-
-        <div id="viewRoot"></div>
-
-        <!-- FOOTER aplikasi -->
-        <footer class="app-footer">
-          <span>© <span class="js-year">2026</span> <b>SIKEDO</b> — Sistem Kehadiran Dosen</span>
-          <span>PKA 26/27 · Powered by Google Apps Script</span>
-        </footer>
-
-      </main>
-    </div>
-  </div>
-
-  <div id="modalRoot"></div>
-
-  <div class="modal-overlay" id="confirmOverlay">
-    <div class="modal modal-sm">
-      <h3 id="confirmTitle">Konfirmasi</h3>
-      <p id="confirmMsg" class="muted"></p>
-      <div class="form-actions">
-        <button class="btn btn-outline" id="confirmCancel">Batal</button>
-        <button class="btn btn-danger" id="confirmOk">Ya, Lanjutkan</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="toastWrap"></div>
-
-  <?!= include('Script'); ?>
+  document.getElementById('btn').href = APP_URL;
+  var sisa = 3;
+  var timer = setInterval(function(){
+    sisa--;
+    document.getElementById('cd').textContent = sisa;
+    if (sisa <= 0){ clearInterval(timer); window.location.replace(APP_URL); }
+  }, 1000);
+</script>
 </body>
 </html>
