@@ -8,19 +8,29 @@
         body, html {
             margin: 0;
             padding: 0;
-            height: 100%;
-            overflow: hidden; /* Mencegah scroll ganda */
+            overflow: hidden;
+            background-color: #f0f0f0; /* Warna loading background */
         }
-        iframe {
+        .iframe-container {
+            position: relative;
             width: 100%;
-            height: 100%;
-            border: none; /* Menghilangkan garis batas iframe */
-            display: block;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .iframe-container iframe {
+            position: absolute;
+            top: -28px; /* Trik: Menggeser frame ke atas sebesar 28px (ukuran banner Google) */
+            left: 0;
+            width: 100%;
+            height: calc(100% + 28px); /* Mengkompensasi tinggi yang tergeser */
+            border: none;
         }
     </style>
 </head>
 <body>
-    <!-- Ganti src dengan URL Web App GAS Anda -->
-    <iframe src="https://script.google.com/macros/s/AKfycbz4xQ11di6zJQ0Rfvrj45OtDz4hDTiAGwEfHEDyE07KSiGBOaXFbNVfZyUiT7FWLUaD/exec"></iframe>
+    <div class="iframe-container">
+        <!-- Ganti dengan URL Web App Anda -->
+        <iframe src="https://script.google.com/macros/s/AKfycbz4xQ11di6zJQ0Rfvrj45OtDz4hDTiAGwEfHEDyE07KSiGBOaXFbNVfZyUiT7FWLUaD/exec"></iframe>
+    </div>
 </body>
 </html>
