@@ -1,49 +1,26 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SIKEDO — Sistem Kehadiran Dosen</title>
-<style>
-  *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:'Poppins','Segoe UI',system-ui,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;
-       background:linear-gradient(135deg,#0f172a 0%,#1e3a8a 55%,#2563eb 100%);padding:18px}
-  .card{background:#fff;border-radius:18px;padding:40px 34px;width:100%;max-width:420px;text-align:center;box-shadow:0 24px 70px rgba(0,0,0,.4)}
-  .logo{width:80px;height:80px;border-radius:22px;background:linear-gradient(135deg,#1a73e8,#60a5fa);
-        display:flex;align-items:center;justify-content:center;font-size:40px;margin:0 auto 16px}
-  h1{font-size:24px;letter-spacing:1px}
-  .sub{color:#64748b;font-size:13px;margin:6px 0 26px}
-  .spinner{width:34px;height:34px;border:3px solid #dbeafe;border-top-color:#1a73e8;border-radius:50%;
-           animation:spin .8s linear infinite;margin:0 auto 14px}
-  @keyframes spin{to{transform:rotate(360deg)}}
-  .count{color:#64748b;font-size:12px;margin-bottom:18px}
-  .btn{display:inline-block;background:#1a73e8;color:#fff;text-decoration:none;font-weight:600;
-       padding:12px 26px;border-radius:10px;font-size:14px;transition:.15s}
-  .btn:hover{background:#1557b0}
-  .foot{margin-top:22px;color:#94a3b8;font-size:11px;line-height:1.6}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIKEDO — Sistem Kehadiran Dosen</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden; /* Mencegah scroll ganda */
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none; /* Menghilangkan garis batas iframe */
+            display: block;
+        }
+    </style>
 </head>
 <body>
-  <div class="card">
-    <div class="logo">🎓</div>
-    <h1>SIKEDO</h1>
-    <p class="sub">Sistem Kehadiran Dosen — PKA 26/27</p>
-    <div class="spinner"></div>
-    <p class="count">Mengalihkan ke aplikasi dalam <span id="cd">3</span> detik…</p>
-    <a class="btn" id="btn" href="#">🔐 Buka Aplikasi SIKEDO</a>
-    <p class="foot">Aplikasi berjalan di Google Apps Script.<br>Halaman ini hanya gerbang masuk (landing page).</p>
-  </div>
-<script>
-  /* ===== GANTI dengan URL Web App (/exec) milik Anda ===== */
-  var APP_URL = "https://script.google.com/macros/s/AKfycbz4xQ11di6zJQ0Rfvrj45OtDz4hDTiAGwEfHEDyE07KSiGBOaXFbNVfZyUiT7FWLUaD/exec?embedded=true";
-
-  document.getElementById('btn').href = APP_URL;
-  var sisa = 3;
-  var timer = setInterval(function(){
-    sisa--;
-    document.getElementById('cd').textContent = sisa;
-    if (sisa <= 0){ clearInterval(timer); window.location.replace(APP_URL); }
-  }, 1000);
-</script>
+    <!-- Ganti src dengan URL Web App GAS Anda -->
+    <iframe src="https://script.google.com/macros/s/AKfycbz4xQ11di6zJQ0Rfvrj45OtDz4hDTiAGwEfHEDyE07KSiGBOaXFbNVfZyUiT7FWLUaD/exec"></iframe>
 </body>
 </html>
