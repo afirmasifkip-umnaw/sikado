@@ -1,36 +1,126 @@
 <!DOCTYPE html>
-<html lang="id">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SIKADO — Sistem Kehadiran Dosen</title>
-    <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            background-color: #f0f0f0; /* Warna loading background */
-        }
-        .iframe-container {
-            position: relative;
-            width: 100%;
-            height: 100vh;
-            overflow: hidden;
-        }
-        .iframe-container iframe {
-            position: absolute;
-            top: 0px; /* Trik: Menggeser frame ke atas sebesar 0px (ukuran banner Google) */
-            left: 0;
-            width: 100%;
-            height: calc(100% + 0px); /* Mengkompensasi tinggi yang tergeser */
-            border: none;
-        }
-    </style>
+  <meta charset="utf-8">
+  <base target="_top">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <?!= include('Style'); ?>
 </head>
 <body>
-    <div class="iframe-container">
-        <!-- Ganti dengan URL Web App Anda -->
-        <iframe src="https://script.google.com/macros/s/AKfycbz4xQ11di6zJQ0Rfvrj45OtDz4hDTiAGwEfHEDyE07KSiGBOaXFbNVfZyUiT7FWLUaD/exec"></iframe>
+
+  <!-- ============ HEADER LOGIN + REGISTRASI ============ -->
+  <div id="loginView" style="display:none">
+
+    <div class="login-card" id="loginCard">
+      <div class="login-logo">🎓</div>
+      <h1 class="login-title">SIKADO</h1>
+      <p class="login-sub">Sistem Kehadiran Dosen — PKA 26/27</p>
+      <form id="loginForm" autocomplete="off">
+        <div class="field">
+          <label>NIDN / Username</label>
+          <input id="loginNidn" placeholder="Contoh: 0107107101" required>
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input id="loginPw" type="password" placeholder="Masukkan password" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block" id="btnLogin">Masuk</button>
+      </form>
+      <div class="switch-link" id="toRegister">Belum punya akun? <b>📝 Daftar sekarang</b></div>
+      <div class="login-hint">
+        👤 <b>Dosen</b> — username &amp; password awal = <b>NIDN 10 digit</b> (awali angka 0)<br>
+        🛡️ <b>Admin</b> — admin / admin123 <i>(segera ganti!)</i>
+      </div>
     </div>
+
+    <div class="login-card" id="regCard" style="display:none">
+      <div class="login-logo">📝</div>
+      <h1 class="login-title">REGISTRASI AKUN DOSEN</h1>
+      <p class="login-sub">Belum terdaftar? Isi data di bawah — tersimpan otomatis</p>
+      <form id="regForm" autocomplete="off">
+        <div class="field">
+          <label>NIDN (10 digit) *</label>
+          <input id="regNidn" placeholder="Contoh: 0107107101" required>
+        </div>
+        <div class="field">
+          <label>Nama Lengkap *</label>
+          <input id="regNama" placeholder="Nama sesuai PK/A" required>
+        </div>
+        <div class="field">
+          <label>Jabatan Fungsional</label>
+          <select id="regJabfung"></select>
+        </div>
+        <div class="field">
+          <label>Password (opsional)</label>
+          <input id="regPw" type="password" placeholder="Kosongkan = password awal NIDN Anda">
+        </div>
+        <button type="submit" class="btn btn-primary btn-block" id="btnReg">Daftar</button>
+      </form>
+      <div class="switch-link" id="toLogin">Sudah punya akun? <b>🔐 Login di sini</b></div>
+    </div>
+
+    <!-- FOOTER halaman login -->
+    <div class="login-footer">© <span class="js-year">2026</span> <b>SIKADO</b> — Sistem Kehadiran Dosen · PKA 26/27</div>
+  </div>
+
+  <!-- ============ APLIKASI ============ -->
+  <div id="appView" style="display:none">
+    <div class="app-body">
+
+      <!-- SIDEBAR -->
+      <aside class="sidebar" id="sidebar">
+        <div class="brand">
+          <div class="brand-ic">🎓</div>
+          <div><b>SIKADO</b><small>Sistem Kehadiran Dosen</small></div>
+        </div>
+        <nav id="navMenu"></nav>
+        <div class="sidebar-foot">
+          <div class="user-mini">
+            <b id="sideUserName">—</b>
+            <small id="sideUserRole">—</small>
+          </div>
+          <button class="btn btn-sm btn-logout" id="btnLogout">🚪 Keluar</button>
+        </div>
+      </aside>
+
+      <!-- KONTEN UTAMA -->
+      <main class="main">
+
+        <!-- HEADER (topbar) -->
+        <div class="topbar">
+          <button class="btn btn-outline btn-sm menu-btn" id="btnMenu">☰</button>
+          <span class="topbar-brand">🎓 SIKADO</span>
+          <h1 id="pageTitle">Dashboard</h1>
+          <div class="user-chip" id="userChip"></div>
+        </div>
+
+        <div id="viewRoot"></div>
+
+        <!-- FOOTER aplikasi -->
+        <footer class="app-footer">
+          <span>© <span class="js-year">2026</span> <b>SIKADO</b> — Sistem Kehadiran Dosen</span>
+          <span>PKA 26/27 · Powered by Google Apps Script</span>
+        </footer>
+
+      </main>
+    </div>
+  </div>
+
+  <div id="modalRoot"></div>
+
+  <div class="modal-overlay" id="confirmOverlay">
+    <div class="modal modal-sm">
+      <h3 id="confirmTitle">Konfirmasi</h3>
+      <p id="confirmMsg" class="muted"></p>
+      <div class="form-actions">
+        <button class="btn btn-outline" id="confirmCancel">Batal</button>
+        <button class="btn btn-danger" id="confirmOk">Ya, Lanjutkan</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toastWrap"></div>
+
+  <?!= include('Script'); ?>
 </body>
 </html>
