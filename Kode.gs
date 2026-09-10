@@ -140,14 +140,12 @@ function samakanTimezone() {
 }
 
 /* ==================== WEB APP ==================== */
-function doGet() {
-  return HtmlService.createTemplateFromFile('Index').evaluate()
-    .setTitle('SIKADO — Sistem Kehadiran Dosen')
-    .addMetaTag('viewport', 'width=device-width, initial-scale=1');
-}
-
-function include(filename) {
-  return HtmlService.createHtmlOutputFromFile(filename).getContent();
+function doGet(e) {
+  return HtmlService.createTemplateFromFile('Index')
+    .evaluate()
+    .setTitle('SIKADO - Sistem Kehadiran Dosen')
+    // Baris di bawah ini adalah KUNCI agar tidak diblokir di GitHub Pages
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL); 
 }
 
 /* ==================== SHEET REFERENSI (KELAS & MATA KULIAH) ==================== */
