@@ -74,7 +74,7 @@ function confirmDialog(title, msg, okLabel){
 
 function handleAuthErr(err){
   if (String(err && err.message || '').toLowerCase().indexOf('sesi') > -1){
-    storageDel('sikodos_token');
+    storageDel('sikado_token');
     state.token = null; state.user = null;
     showView('login');
   }
@@ -88,7 +88,7 @@ document.addEventListener('DOMContentLoaded', function(){
   $('#toRegister').addEventListener('click', showRegister);
   $('#toLogin').addEventListener('click', showLoginCard);
   $('#regJabfung').innerHTML = jabfungOptions('');
-  var saved = storageGet('sikodos_token');
+  var saved = storageGet('sikado_token');
   if (saved){ state.token = saved; boot(); } else showView('login');
 });
 
@@ -114,7 +114,7 @@ function doLogin(e){
   call('login', normNidn($('#loginNidn').value.trim()), $('#loginPw').value)
     .then(function(res){
       state.token = res.token; state.user = res.user;
-      storageSet('sikodos_token', res.token);
+      storageSet('sikado_token', res.token);
       $('#loginPw').value = '';
       toast('Selamat datang, '+res.user.nama+' 👋', 'ok');
       boot();
@@ -152,7 +152,7 @@ function boot(){
       buildNav(); setUserChip(); showView('app'); go('dashboard');
     })
     .catch(function(err){
-      storageDel('sikodos_token');
+      storageDel('sikado_token');
       state.token = null;
       showView('login');
       toast(err.message, 'err');
@@ -161,7 +161,7 @@ function boot(){
 
 function doLogout(){
   call('logout', state.token).catch(function(){});
-  storageDel('sikodos_token');
+  storageDel('sikado_token');
   state.token = null; state.user = null;
   showView('login');
   toast('Anda telah keluar.', 'ok');
@@ -317,7 +317,6 @@ function renderInput(rec){
   if (rec && rec.nidn && !list.some(function(d){ return d.nidn===rec.nidn; }))
     list.unshift({ nidn:rec.nidn, nama:rec.nama, jabfung:rec.jabfung });
 
-  /* Daftar pilihan Kelas & Mata Kuliah dari sheet referensi (admin kelola) */
   var kelasList = (state.lists.kelasList || []).slice();
   if (rec && rec.kelas && kelasList.indexOf(rec.kelas) === -1) kelasList.unshift(rec.kelas);
   var mkList = (state.lists.mkList || []).slice();
@@ -357,7 +356,7 @@ function renderInput(rec){
         '</select></div>'+
         '<div class="field"><label>Pertemuan Ke- *</label><input id="fPertemuan" type="number" min="1" required value="'+esc(rec?rec.pertemuan:'')+'"></div>'+
         '<div class="field"><label>Jam Masuk *</label><input id="fJam" type="time" required value="'+esc(rec?rec.jamMasuk:nowTimeStr())+'"></div>'+
-        '<div class="field"><label>Tanggal</label><input id="fTanggal" type="date" value="'+esc(rec?(rec.tgl||''):todayStr())+'"></div>'+
+        '<div class="field"><label>Tanggal Perkuliahan *</label><input id="fTanggal" type="date" required value="'+esc(rec?(rec.tgl||''):todayStr())+'"></div>'+
         '<div class="field"><label>Jabatan Fungsional</label><select id="fJabfung">'+jabfungOptions(rec?rec.jabfung:state.user.jabfung)+'</select></div>'+
       '</div>'+
       '<div class="field"><label>Materi Perkuliahan</label><textarea id="fMateri" rows="3" placeholder="Materi yang disampaikan...">'+esc(rec?rec.materi:'')+'</textarea></div>'+
@@ -697,7 +696,7 @@ function deleteUser(row){
     });
 }
 
-/* ============================================================ KELOLA KELAS & MATA KULIAH (ADMIN) — BARU */
+/* ============================================================ KELOLA KELAS & MATA KULIAH (ADMIN) */
 function renderRefs(){
   $('#viewRoot').innerHTML = '<div class="card"><div class="loading"><div class="spinner"></div>Memuat daftar...</div></div>';
   call('apiGetRefs', state.token).then(function(res){
