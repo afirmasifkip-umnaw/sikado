@@ -1,13 +1,19 @@
 /*************************************************************
- *  SIKEDO — Sistem Kehadiran Dosen
+ *  SIKADO — Sistem Kehadiran Dosen
  *  Sistem Pencatatan Kehadiran Perkuliahan — PKA 26/27
+ *
+ *  VERSI FINAL 5 — Perbaikan:
+ *   • BUG TANGGAL: timezone spreadsheet disamakan otomatis dengan
+ *     timezone script; timestamp dibangun dari komponen (bukan string)
+ *     → edit/tentukan tanggal perkuliahan kini tersimpan dengan benar.
+ *   • Nama aplikasi: SIKADO (sebelumnya SIKEDO).
  *
  *  Terintegrasi via ID:
  *    • Spreadsheet : 1tsyFBzBv5EvvzJLBZHntrjVm8SuT6lwFGHsUT1NbhPI
  *    • Folder SS   : 1uMpx-lT_i3tVVl5h3dxhJMtd6mzXsY5J
  *
  *  Sheet: Form Responses 1 | USERS | LOG_AKTIVITAS
- *         REF_KELAS | REF_MATAKULIAH (daftar pilihan, dikelola admin)
+ *         REF_KELAS | REF_MATAKULIAH
  *************************************************************/
 
 /* ==================== KONFIGURASI ==================== */
@@ -24,10 +30,8 @@ var SESSION_HOURS = 6;
 var SETUP_FLAG    = 'sik_setup_ok';
 var NIDN_LENGTH   = 10;
 
-/* Nilai awal daftar Kelas (admin dapat menambah/mengurangi) */
 var DEFAULT_KELAS = ['PAUD L','PAUD M','PAUD N','PAUD P','PAUD Q','PAUD R','PAUD S',
                      'PGSD K','PGSD L','PGSD M'];
-/* Nilai awal tambahan daftar Mata Kuliah (digabung dengan yang terdapat di data) */
 var DEFAULT_MK_EXTRA = ['PENDIDIKAN AGAMA','BAHASA INDONESIA','LAINNYA'];
 
 var BULAN = ['Januari','Februari','Maret','April','Mei','Juni','Juli',
@@ -47,11 +51,12 @@ function getSS_() {
   return SS_CACHE;
 }
 
+/* Satu zona waktu untuk SEMUA operasi: timezone script (Asia/Jakarta) */
 var TZ_CACHE = null;
 function getTZ_() {
   if (TZ_CACHE) return TZ_CACHE;
-  try { TZ_CACHE = getSS_().getSpreadsheetTimeZone(); }
-  catch(e) { TZ_CACHE = Session.getScriptTimeZone() || 'Asia/Jakarta'; }
+  try { TZ_CACHE = Session.getScriptTimeZone() || 'Asia/Jakarta'; }
+  catch(e) { TZ_CACHE = 'Asia/Jakarta'; }
   return TZ_CACHE;
 }
 
@@ -89,10 +94,55 @@ function normNidn_(v) {
   return s;
 }
 
+/* ==================== PERBAIKAN TANGGAL ==================== */
+/* Membangun objek Date dari 'yyyy-MM-dd' + 'HH:mm[:ss]' secara KOMPONEN
+   (bukan dari string) → konsisten & bebas pergeseran zona waktu. */
+function buildTimestamp_(tanggal, jam) {
+  var now = new Date();
+  var y = now.getFullYear(), mo = now.getMonth(), d = now.getDate();
+  var h = 0, mi = 0, se = 0;
+
+  var m1 = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(tanggal || ''));
+  if (m1) { y = parseInt(m1[1], 10); mo = parseInt(m1[2], 10) - 1; d = parseInt(m1[3], 10); }
+
+  var m2 = /^(\d{1,2}):(\d{2})(?::(\d{2}))?$/.exec(String(jam || ''));
+  if (m2) { h = parseInt(m2[1], 10); mi = parseInt(m2[2], 10); if (m2[3]) se = parseInt(m2[3], 10); }
+
+  var dt = new Date(y, mo, d, h, mi, se, 0);
+  return (dt instanceof Date && !isNaN(dt.getTime())) ? dt : new Date();
+}
+
+/* Menyamakan timezone spreadsheet dengan timezone script (kunci perbaikan bug tanggal).
+   Nilai tanggal lama di sheet TIDAK berubah — hanya interpretasinya diseragamkan. */
+function syncTimezone_() {
+  try {
+    var ss = getSS_();
+    var tz = Session.getScriptTimeZone() || 'Asia/Jakarta';
+    if (String(ss.getSpreadsheetTimeZone()) !== tz) {
+      var lama = ss.getSpreadsheetTimeZone();
+      ss.setSpreadsheetTimeZone(tz);
+      logActivity_({ nidn:'auto', nama:'Auto-Setup' }, 'SET TIMEZONE', lama + ' → ' + tz);
+    }
+  } catch(e) {}
+}
+
+/* Jalankan manual dari editor untuk menyamakan timezone SEKARANG (opsional —
+   juga berjalan otomatis saat login pertama setelah update). */
+function samakanTimezone() {
+  var ss = getSS_();
+  var tz = Session.getScriptTimeZone() || 'Asia/Jakarta';
+  var lama = ss.getSpreadsheetTimeZone();
+  if (lama !== tz) ss.setSpreadsheetTimeZone(tz);
+  var msg = '✅ Timezone script     : ' + tz +
+            '\n   Timezone spreadsheet : ' + lama + (lama !== tz ? '  → diubah menjadi ' + tz : ' (sudah sama)');
+  Logger.log(msg);
+  return msg;
+}
+
 /* ==================== WEB APP ==================== */
 function doGet() {
   return HtmlService.createTemplateFromFile('Index').evaluate()
-    .setTitle('SIKEDO — Sistem Kehadiran Dosen')
+    .setTitle('SIKADO — Sistem Kehadiran Dosen')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
 }
 
@@ -101,7 +151,6 @@ function include(filename) {
 }
 
 /* ==================== SHEET REFERENSI (KELAS & MATA KULIAH) ==================== */
-/* Membuat sheet REF_KELAS & REF_MATAKULIAH beserta nilai awalnya jika belum ada. */
 function ensureRefSheets_() {
   var ss = getSS_();
 
@@ -120,7 +169,6 @@ function ensureRefSheets_() {
     m.getRange(1,1,1,1).setValue('MATAKULIAH')
       .setFontWeight('bold').setBackground('#0f172a').setFontColor('#ffffff');
     m.setFrozenRows(1);
-    // seed: nilai unik dari data + daftar tambahan
     var seen = {};
     var seed = [];
     var sh = findSheet_(ss, SHEET_DATA);
@@ -138,7 +186,6 @@ function ensureRefSheets_() {
   }
 }
 
-/* Daftar nilai referensi (array string, urut sesuai sheet) */
 function getRefValues_(sheetName) {
   var sh = findSheet_(getSS_(), sheetName);
   if (!sh) return [];
@@ -153,7 +200,6 @@ function getRefValues_(sheetName) {
   return out;
 }
 
-/* Daftar referensi + nomor baris (untuk hapus) */
 function getRefList_(sheetName) {
   var sh = findSheet_(getSS_(), sheetName);
   if (!sh) return [];
@@ -296,6 +342,9 @@ function ensureSetup_() {
 
     var ss = getSS_();
 
+    // 0) Samakan timezone spreadsheet ↔ script (PERBAIKAN BUG TANGGAL)
+    syncTimezone_();
+
     // 1) Sheet data
     var sh = findSheet_(ss, SHEET_DATA);
     if (!sh) {
@@ -321,7 +370,7 @@ function ensureSetup_() {
         .setFontWeight('bold').setBackground('#0f172a').setFontColor('#ffffff');
     }
 
-    // 4) Sheet referensi Kelas & Mata Kuliah (BARU)
+    // 4) Sheet referensi Kelas & Mata Kuliah
     ensureRefSheets_();
 
     // 5) Admin default
@@ -374,8 +423,9 @@ function setupAwal() {
   var ss = getSS_();
   var nk = getRefValues_(SHEET_KELAS).length;
   var nm = getRefValues_(SHEET_MK).length;
-  var msg = '✅ Setup SIKEDO selesai!\n' +
+  var msg = '✅ Setup SIKADO selesai!\n' +
     '• Spreadsheet : ' + ss.getName() + '\n' +
+    '• Timezone    : script & spreadsheet = ' + getTZ_() + ' (sudah disamakan)\n' +
     '• Admin       : "admin" / "admin123" (SEGERA GANTI)\n' +
     '• Dosen       : ' + n + ' akun baru diimport (password awal = NIDN 10 digit)\n' +
     '• Ref Kelas   : ' + nk + ' item | Ref Mata Kuliah : ' + nm + ' item\n' +
@@ -400,6 +450,7 @@ function tesKoneksi() {
     '   • Sheet USERS : ' + (usersSheet ? 'DITEMUKAN (' + Math.max(0, usersSheet.getLastRow()-1) + ' akun)' : 'BELUM ADA') + '\n' +
     '   • Ref Kelas   : ' + (refK ? (Math.max(0, refK.getLastRow()-1) + ' item') : 'BELUM ADA (dibuat otomatis)') + '\n' +
     '   • Ref Matkul  : ' + (refM ? (Math.max(0, refM.getLastRow()-1) + ' item') : 'BELUM ADA (dibuat otomatis)') + '\n' +
+    '   • Timezone    : script=' + (Session.getScriptTimeZone() || '?') + ' | spreadsheet=' + ss.getSpreadsheetTimeZone() + (Session.getScriptTimeZone() === ss.getSpreadsheetTimeZone() ? ' ✅ SAMA' : ' ⚠️ BEDA → jalankan samakanTimezone()') + '\n' +
     '   • NIDN repair : ' + (repaired ? 'sudah' : 'otomatis saat login') + '\n' +
     '✅ Folder Drive OK : "' + folder.getName() + '"';
   Logger.log(msg);
@@ -699,8 +750,8 @@ function apiGetFilters(token) {
     }
     return { success:true, data: {
       prodiList: Object.keys(prodi).sort(),
-      kelasList: getRefValues_(SHEET_KELAS),     // ← dari sheet REF_KELAS
-      mkList: getRefValues_(SHEET_MK),           // ← dari sheet REF_MATAKULIAH
+      kelasList: getRefValues_(SHEET_KELAS),
+      mkList: getRefValues_(SHEET_MK),
       dosenList: dosenList,
       tahunList: Object.keys(tahun).sort().reverse()
     }};
@@ -777,17 +828,20 @@ function apiSaveRecord(token, rec) {
       }
       if (!jabfung) jabfung = String(old[3]);
 
+      /* ===== PERBAIKAN TANGGAL =====
+         Timestamp dibangun dari KOMPONEN tanggal + jam (bukan string),
+         sehingga tanggal yang dipilih user/admin PASTI tersimpan. */
       var ts = (old[0] instanceof Date) ? old[0] : (new Date(old[0]).getTime() ? new Date(old[0]) : new Date());
-      if (rec.tanggal) {
-        var jamStr = jam.length === 5 ? jam + ':00' : jam;
-        var nts = new Date(rec.tanggal + 'T' + jamStr);
-        if (!isNaN(nts.getTime())) ts = nts;
+      if (/^(\d{4})-(\d{2})-(\d{2})$/.test(String(rec.tanggal || ''))) {
+        ts = buildTimestamp_(rec.tanggal, jam);
       }
+
       sh.getRange(row, 1, 1, DATA_HEADERS.length).setValues([[
         ts, nidn, nama, jabfung, kelas, matakuliah, pertemuan, materi, jam,
         String(rec.ssAwal||''), String(rec.ssTengah||''), String(rec.ssAkhir||'')
       ]]);
-      logActivity_(user, 'EDIT DATA', 'Baris ' + row + ' — ' + nidn + ' — ' + matakuliah);
+      logActivity_(user, 'EDIT DATA', 'Baris ' + row + ' — ' + nidn + ' — ' + matakuliah +
+        ' — tanggal ' + Utilities.formatDate(ts, getTZ_(), 'yyyy-MM-dd'));
       return { success:true, message:'Data berhasil diperbarui.' };
 
     } else {
@@ -810,13 +864,13 @@ function apiSaveRecord(token, rec) {
         }
       }
 
+      /* ===== PERBAIKAN TANGGAL (insert) ===== */
       var tanggal = rec.tanggal || Utilities.formatDate(new Date(), getTZ_(), 'yyyy-MM-dd');
-      var jamStr2 = jam.length === 5 ? jam + ':00' : (jam || '00:00:00');
-      var tsNew = new Date(tanggal + 'T' + jamStr2);
-      if (isNaN(tsNew.getTime())) tsNew = new Date();
+      var tsNew = buildTimestamp_(tanggal, jam);
       sh.appendRow([ tsNew, nidn, nama, jabfung, kelas, matakuliah, pertemuan, materi, jam,
         String(rec.ssAwal||''), String(rec.ssTengah||''), String(rec.ssAkhir||'') ]);
-      logActivity_(user, 'TAMBAH DATA', nidn + ' — ' + matakuliah + ' — pertemuan ' + pertemuan);
+      logActivity_(user, 'TAMBAH DATA', nidn + ' — ' + matakuliah + ' — pertemuan ' + pertemuan +
+        ' — tanggal ' + Utilities.formatDate(tsNew, getTZ_(), 'yyyy-MM-dd'));
       return { success:true, message:'Kehadiran berhasil disimpan.' };
     }
   } catch(e) {
@@ -1000,7 +1054,7 @@ function apiExportExcel(token, prodi, bulan, tahun) {
     sh.setName('Daftar Hadir');
     var n = headers.length;
 
-    sh.getRange(1,1,1,n).merge().setValue('DAFTAR HADIR PERKULIAHAN — PKA 26/27 (SIKEDO)')
+    sh.getRange(1,1,1,n).merge().setValue('DAFTAR HADIR PERKULIAHAN — PKA 26/27 (SIKADO)')
       .setFontSize(14).setFontWeight('bold').setHorizontalAlignment('center');
     sh.getRange(2,1,1,n).merge().setValue(lblProdi + '  |  ' + lblPeriode + '  |  Total: ' + rows.length + ' pertemuan')
       .setFontSize(11).setFontWeight('bold').setHorizontalAlignment('center');
